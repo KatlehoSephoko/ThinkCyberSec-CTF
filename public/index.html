@@ -79,7 +79,7 @@
         </div>
     </div>
 
-        <script>
+    <script>
         let isLogin = true;
         let currentTeam = localStorage.getItem('currentTeam') || "";
 
@@ -95,9 +95,11 @@
             e.preventDefault();
             isLogin = !isLogin;
             document.getElementById('teamName').classList.toggle('hidden');
+            
             document.getElementById('submitBtn').textContent = isLogin ? 'LOGIN' : 'REGISTER TEAM';
             document.getElementById('toggleText').textContent = isLogin ? "Don't have an account?" : 'Already registered?';
             document.getElementById('toggleMode').textContent = isLogin ? 'Register Team' : 'Log in here';
+            
             document.getElementById('authMsg').classList.add('hidden');
         });
 
@@ -167,16 +169,25 @@
                         ${downloadIcon} Download File
                     </a>` : '';
                 
-                // NEW: Warning badge for limited attempts
-                let warningBadge = '';
+                // --- NEW DYNAMIC MATH ---
+                const attemptsMade = chal.attemptsMade || 0;
+                const penaltyAmount = chal.penalty || 0;
+                
+                // Calculates the real-time value of the challenge
+                const currentCardPoints = chal.points - (attemptsMade * penaltyAmount);
+
+                // Creates the student-friendly warning message directly below the description
+                let attemptMsg = '';
                 if (chal.maxAttempts && !isSolved) {
-                    const attemptsLeft = chal.maxAttempts - (chal.attemptsMade || 0);
-                    warningBadge = `
-                        <div class="mb-4 text-[11px] font-bold text-rose-400 bg-rose-900/20 border border-rose-900/50 p-2.5 rounded-lg flex items-center gap-2 uppercase tracking-wide">
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            <span>WARNING: ${attemptsLeft} attempts left (-${chal.penalty} pts per fail)</span>
+                    const attemptsLeft = chal.maxAttempts - attemptsMade;
+                    attemptMsg = `
+                        <div class="mt-3 mb-6 inline-flex items-center gap-2 text-[11px] font-bold text-rose-400 bg-rose-900/20 border border-rose-900/50 px-3 py-1.5 rounded uppercase tracking-wide">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            This challenge has ${chal.maxAttempts} attempts (${attemptsLeft} left)
                         </div>
                     `;
+                } else {
+                    attemptMsg = '<div class="mb-6"></div>';
                 }
                 
                 grid.innerHTML += `
@@ -184,10 +195,15 @@
                         <div>
                             <div class="flex justify-between items-start mb-4">
                                 <span class="bg-slate-800 border border-slate-600 text-slate-300 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-full">${chal.category}</span>
-                                <span class="font-mono text-sm font-bold ${isSolved ? 'text-emerald-400' : 'text-cyan-400'}">${chal.points} PTS</span>
+                                
+                                <!-- The Points text dynamically updates here based on fails -->
+                                <span class="font-mono text-sm font-bold ${isSolved ? 'text-emerald-400' : 'text-cyan-400'}">${currentCardPoints} PTS</span>
                             </div>
                             <h3 class="text-xl font-bold text-white mb-2 leading-tight">${chal.name}</h3>
-                            <p class="text-sm text-slate-400 mb-6 leading-relaxed">${chal.description}</p>
+                            <p class="text-sm text-slate-400 leading-relaxed">${chal.description}</p>
+                            
+                            <!-- The attempt message spawns right here -->
+                            ${attemptMsg}
                         </div>
                         
                         ${isSolved ? 
@@ -198,7 +214,6 @@
                             </div>` :
                             `<div class="mt-auto">
                                 ${downloadBtn}
-                                ${warningBadge}
                                 <div class="relative mb-3">
                                     <input type="text" id="flag-${chal.id}" placeholder="${chal.clue}" class="w-full p-3 bg-slate-900/80 text-emerald-400 placeholder-slate-600 rounded border border-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono text-sm transition">
                                 </div>
@@ -233,7 +248,6 @@
                 btn.innerHTML = originalText;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 
-                // Allow the browser a tiny split-second to update the score visually before throwing the pop-up alert
                 if (data.newScore !== undefined) {
                     document.getElementById('displayScore').textContent = data.newScore;
                 }
@@ -256,6 +270,5 @@
             }
         }
     </script>
-
 </body>
 </html>
