@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard | ThickCyberSec CTF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-green-500 font-mono p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg border border-green-500">
+        <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
+            <h1 class="text-xl md:text-3xl font-bold text-white">ThickCyberSec Leaderboard</h1>
+            <a href="/" class="text-xs md:text-sm text-green-400 hover:text-green-300 border border-green-400 px-3 py-1 rounded transition">Back to Dashboard</a>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-700 text-white text-xs md:text-sm uppercase tracking-wider">
+                        <th class="p-3 border-b border-gray-600">Rank</th>
+                        <th class="p-3 border-b border-gray-600">Team</th>
+                        <th class="p-3 border-b border-gray-600">Solved</th>
+                        <th class="p-3 border-b border-gray-600 text-right">Score</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreboard-body">
+                    <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function loadScoreboard() {
+            try {
+                const res = await fetch('/api/scoreboard');
+                const leaderboard = await res.json();
+                const tbody = document.getElementById('scoreboard-body');
+                tbody.innerHTML = ''; 
+
+                if (leaderboard.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">No scores yet.</td></tr>';
+                    return;
+                }
+
+                leaderboard.forEach((team, index) => {
+                    const isFirst = index === 0;
+                    const rankColor = isFirst ? 'text-yellow-400 font-bold' : 'text-gray-300';
+                    const nameColor = isFirst ? 'text-yellow-400 font-bold' : 'text-green-400';
+                    
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-gray-700/30 transition">
+                            <td class="p-3 border-b border-gray-700 ${rankColor}">#${index + 1}</td>
+                            <td class="p-3 border-b border-gray-700 ${nameColor}">${team.teamName}</td>
+                            <td class="p-3 border-b border-gray-700 text-gray-300">${team.solvedCount}</td>
+                            <td class="p-3 border-b border-gray-700 text-right font-bold text-white">${team.score} pts</td>
+                        </tr>`;
+                });
+            } catch (err) { console.error(err); }
+        }
+        loadScoreboard();
+        setInterval(loadScoreboard, 15000);
+    </script>
+</body>
+</html>
