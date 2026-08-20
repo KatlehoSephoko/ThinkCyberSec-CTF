@@ -20,7 +20,7 @@
     <div id="auth-section" class="glass-panel p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700 glow-border mt-12 transition-all">
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Think<span class="text-cyan-500">CyberSec</span></h1>
-            <p class="text-slate-400 text-sm uppercase tracking-widest">Incident Response Platform</p>
+            <p class="text-slate-400 text-sm uppercase tracking-widest">Student CTF Platform</p>
         </div>
         
         <form id="authForm" class="space-y-5">
@@ -28,18 +28,18 @@
                 <input type="text" id="teamName" placeholder="Team Name" class="w-full p-3 bg-slate-900/50 text-white rounded-lg border border-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition hidden">
             </div>
             <div>
-                <input type="email" id="email" placeholder="Corporate Email" required class="w-full p-3 bg-slate-900/50 text-white rounded-lg border border-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition">
+                <input type="email" id="email" placeholder="Team Contact Email" required class="w-full p-3 bg-slate-900/50 text-white rounded-lg border border-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition">
             </div>
             <div>
-                <input type="password" id="password" placeholder="Access Token (Password)" required class="w-full p-3 bg-slate-900/50 text-white rounded-lg border border-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition">
+                <input type="password" id="password" placeholder="Shared Team Password" required class="w-full p-3 bg-slate-900/50 text-white rounded-lg border border-slate-600 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition">
             </div>
             
             <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-cyan-500/30 transition-all transform hover:scale-[1.02]">
-                AUTHENTICATE
+                LOGIN
             </button>
             <p class="text-sm text-center text-slate-400 mt-4">
-                <span id="toggleText">Unauthorized?</span> 
-                <a href="#" id="toggleMode" class="text-cyan-400 hover:text-cyan-300 hover:underline font-medium ml-1">Request Access</a>
+                <span id="toggleText">Don't have an account?</span> 
+                <a href="#" id="toggleMode" class="text-cyan-400 hover:text-cyan-300 hover:underline font-medium ml-1">Register Team</a>
             </p>
         </form>
         <div id="authMsg" class="mt-6 text-center text-sm hidden font-medium"></div>
@@ -51,12 +51,12 @@
         <div class="w-full glass-panel flex flex-col md:flex-row justify-between items-center p-5 rounded-2xl border border-slate-700 glow-border mb-8 shadow-xl">
             <div class="mb-4 md:mb-0 text-center md:text-left">
                 <h1 class="text-2xl font-bold text-white tracking-tight">Think<span class="text-cyan-500">CyberSec</span></h1>
-                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">SOC Interface Active</p>
+                <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Hacker Dashboard</p>
             </div>
             
             <div class="flex items-center gap-6">
                 <div class="text-right">
-                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Operator Team</p>
+                    <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Current Team</p>
                     <p id="displayTeam" class="text-white font-bold text-lg leading-none"></p>
                 </div>
                 <div class="h-10 w-px bg-slate-700 hidden md:block"></div>
@@ -68,7 +68,7 @@
                     <a href="/scoreboard.html" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded flex items-center gap-2 transition">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg> Leaderboard
                     </a>
-                    <button onclick="logout()" class="text-xs text-slate-500 hover:text-red-400 text-right transition">Disconnect</button>
+                    <button onclick="logout()" class="text-xs text-slate-500 hover:text-red-400 text-right transition">Logout</button>
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
         </div>
     </div>
 
-        <script>
+    <script>
         let isLogin = true;
         let currentTeam = localStorage.getItem('currentTeam') || "";
 
@@ -95,8 +95,12 @@
             e.preventDefault();
             isLogin = !isLogin;
             document.getElementById('teamName').classList.toggle('hidden');
-            document.getElementById('submitBtn').textContent = isLogin ? 'AUTHENTICATE' : 'REGISTER SYSTEM';
-            document.getElementById('toggleText').textContent = isLogin ? 'Unauthorized?' : 'System registered?';
+            
+            // Student-friendly button text updates
+            document.getElementById('submitBtn').textContent = isLogin ? 'LOGIN' : 'REGISTER TEAM';
+            document.getElementById('toggleText').textContent = isLogin ? "Don't have an account?" : 'Already registered?';
+            document.getElementById('toggleMode').textContent = isLogin ? 'Register Team' : 'Log in here';
+            
             document.getElementById('authMsg').classList.add('hidden');
         });
 
@@ -234,6 +238,5 @@
             }
         }
     </script>
-
 </body>
 </html>
