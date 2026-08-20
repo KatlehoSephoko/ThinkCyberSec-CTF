@@ -71,7 +71,11 @@ app.get('/api/challenges', (req, res) => {
 
         if (isUnlocked && meetsScoreThreshold) {
             const { flag, ...safeData } = chal; 
-            return { ...safeData, status: isSolved ? 'solved' : 'open' };
+            return { 
+                ...safeData, 
+                status: isSolved ? 'solved' : 'open',
+                attemptsMade: state.attempts[chal.id] || 0 // Sends attempt history to frontend
+            };
         }
         return null;
     }).filter(Boolean);
@@ -89,26 +93,44 @@ app.post('/api/submit-flag', (req, res) => {
 
     const currentAttempts = state.attempts[challengeId] || 0;
     if (challenge.maxAttempts && currentAttempts >= challenge.maxAttempts) {
-        return res.status(403).json({ error: "Maximum attempts reached. Locked." });
+        return res.status(403).json({ error: "Maximum attempts reached. Challenge locked." });
     }
 
     if (challenge.flag === submittedFlag) {
         state.solved.push(challengeId);
         saveStateToDB();
-        res.json({ success: true, message: `Flag accepted! +${challenge.points} pts` });
+        
+        // Let the team know if their previous penalties ate into their reward
+        const penaltyTaken = currentAttempts * (challenge.penalty || 0);
+        let msg = `Flag accepted! +${challenge.points} pts`;
+        if (penaltyTaken > 0) {
+            msg += ` (Note: You lost ${penaltyTaken} points from previous failed attempts)`;
+        }
+        
+        res.json({ success: true, message: msg });
     } else {
         state.attempts[challengeId] = currentAttempts + 1;
         let errMsg = "Incorrect flag.";
+        
         if (challenge.penalty) {
             state.penaltyPoints = (state.penaltyPoints || 0) + challenge.penalty;
-            errMsg += ` ${challenge.penalty} points deducted.`;
+            errMsg += ` ${challenge.penalty} points deducted from your dashboard!`;
         }
+        
         saveStateToDB();
-        res.status(401).json({ error: errMsg });
+        
+        // Calculate the live score so the dashboard updates instantly
+        let newScore = 0;
+        state.solved.forEach(id => {
+            const c = challenges.find(x => x.id === id);
+            if (c) newScore += c.points;
+        });
+        newScore -= (state.penaltyPoints || 0);
+        
+        res.status(401).json({ error: errMsg, newScore });
     }
 });
 
-// NEW SCOREBOARD ENDPOINT (Includes Graph History)
 app.get('/api/scoreboard', (req, res) => {
     const leaderboard = Object.entries(teamState).map(([teamName, state]) => {
         let score = 0;
@@ -130,19 +152,14 @@ app.get('/api/scoreboard', (req, res) => {
     res.json(leaderboard);
 });
 
-// --- BOOT UP SEQUENCE ---
-// Fix: Wait for the database to load BEFORE starting the server
+// Boot sequence with database lock
 pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
     .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
     .then(res => {
         if (res.rows.length > 0) {
             teamState = res.rows[0].state;
             console.log("Team state restored from Supabase!");
-        } else {
-            console.log("No existing state found. Starting fresh.");
         }
-        
-        // The doors only open AFTER the database is fully loaded
         app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     })
     .catch(err => {
