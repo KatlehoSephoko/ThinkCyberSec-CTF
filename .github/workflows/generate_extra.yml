@@ -1,0 +1,49 @@
+name: Generate Extra CTF Artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate_extra_files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Libraries
+        run: pip install Pillow
+
+      - name: Generate the 4 Files
+        run: |
+          mkdir -p extra_artifacts
+          cd extra_artifacts
+          
+          # 1. for_1: Corrupted PNG
+          python -c "
+          from PIL import Image
+          img = Image.new('RGB', (800, 400), color = 'green')
+          img.save('corrupted.png')
+          with open('corrupted.png', 'r+b') as f:
+              f.seek(0)
+              f.write(b'\x00\x00\x00\x00\x00\x00\x00\x00') # Overwrites the magic bytes
+          "
+          
+          # 2. crypto_1: Caesar's Salad
+          echo "gpf{onfvp_fhofgvghgvba}" > caesar_message.txt
+          
+          # 3. crack_1: RockYou Basics (MD5 hash of iloveyou123)
+          echo "e56bacdd9e77c570bfa3f80c2f213009" > basic_hash.txt
+          
+          # 4. crack_4: NTLMv2 Relay Hash
+          echo "Admin::THICKCYBERSEC:1122334455667788:00000000000000000000000000000000:0101000000000000 (Cracked password is: relay_admin_hash_cracked)" > ntlmv2_capture.txt
+
+      - name: Upload Extra Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: extra-ctf-artifacts
+          path: extra_artifacts/
