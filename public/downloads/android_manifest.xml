@@ -1,0 +1,1 @@
+<manifest><activity android:name=".SecretConfig" android:exported="true"><!-- tcs{exported_activity_found} --></activity></manifest>
