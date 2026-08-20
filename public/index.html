@@ -30,9 +30,10 @@
     <div id="dashboard-section" class="w-full max-w-5xl hidden flex-col items-center mt-6">
         <div class="w-full flex justify-between items-center bg-gray-800 p-4 rounded border border-green-500 mb-6">
             <h1 class="text-xl md:text-2xl font-bold text-white">ThickCyberSec CTF</h1>
-            <div class="text-right">
+            <div class="text-right flex flex-col items-end">
                 <p class="text-gray-400 text-sm">Team: <span id="displayTeam" class="text-green-400 font-bold"></span></p>
-                <p class="text-gray-400 text-sm">Score: <span id="displayScore" class="text-yellow-400 font-bold"></span> pts</p>
+                <p class="text-gray-400 text-sm mb-1">Score: <span id="displayScore" class="text-yellow-400 font-bold"></span> pts</p>
+                <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 underline">Logout</button>
             </div>
         </div>
         
@@ -47,7 +48,17 @@
 
     <script>
         let isLogin = true;
-        let currentTeam = "";
+        // Check if the user is already logged in via localStorage
+        let currentTeam = localStorage.getItem('currentTeam') || "";
+
+        // If they are already logged in, skip the login screen immediately
+        if (currentTeam) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            document.getElementById('dashboard-section').classList.add('flex');
+            document.getElementById('displayTeam').textContent = currentTeam;
+            loadChallenges();
+        }
 
         document.getElementById('toggleMode').addEventListener('click', (e) => {
             e.preventDefault();
@@ -77,6 +88,9 @@
 
             if (res.ok && isLogin) {
                 currentTeam = data.team;
+                // Save the team session to localStorage
+                localStorage.setItem('currentTeam', currentTeam);
+                
                 setTimeout(() => {
                     document.getElementById('auth-section').classList.add('hidden');
                     document.getElementById('dashboard-section').classList.remove('hidden');
@@ -89,6 +103,11 @@
             }
         });
 
+        function logout() {
+            localStorage.removeItem('currentTeam');
+            location.reload();
+        }
+
         async function loadChallenges() {
             const res = await fetch(`/api/challenges?team=${encodeURIComponent(currentTeam)}`);
             const data = await res.json();
@@ -97,11 +116,10 @@
             const grid = document.getElementById('challenges-grid');
             grid.innerHTML = '';
 
-                    data.challenges.forEach(chal => {
+            data.challenges.forEach(chal => {
                 const isSolved = chal.status === 'solved';
                 const bgClass = isSolved ? 'bg-green-900/30 border-green-500' : 'bg-gray-800 border-gray-600';
                 
-                // Creates a download button if the file exists
                 const downloadBtn = chal.download ? `<a href="${chal.download}" download class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white py-2 mb-3 rounded border border-blue-400 transition text-xs font-bold tracking-wider">⬇️ DOWNLOAD ARTIFACT</a>` : '';
                 
                 grid.innerHTML += `
@@ -124,7 +142,6 @@
                     </div>
                 `;
             });
-
         }
 
         async function submitFlag(challengeId) {
