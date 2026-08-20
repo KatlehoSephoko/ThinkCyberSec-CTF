@@ -20,17 +20,6 @@ const pool = new Pool({
 
 let teamState = {};
 
-// Load existing data on boot
-pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
-    .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
-    .then(res => {
-        if (res.rows.length > 0) {
-            teamState = res.rows[0].state;
-            console.log("Team state restored from Supabase!");
-        }
-    })
-    .catch(err => console.error("Database initialization error:", err));
-
 // Save state to Supabase
 function saveStateToDB() {
     pool.query(
@@ -141,4 +130,22 @@ app.get('/api/scoreboard', (req, res) => {
     res.json(leaderboard);
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// --- BOOT UP SEQUENCE ---
+// Fix: Wait for the database to load BEFORE starting the server
+pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
+    .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
+    .then(res => {
+        if (res.rows.length > 0) {
+            teamState = res.rows[0].state;
+            console.log("Team state restored from Supabase!");
+        } else {
+            console.log("No existing state found. Starting fresh.");
+        }
+        
+        // The doors only open AFTER the database is fully loaded
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch(err => {
+        console.error("Database initialization error:", err);
+        app.listen(PORT, () => console.log(`Server running on port ${PORT} (DB Error)`));
+    });
