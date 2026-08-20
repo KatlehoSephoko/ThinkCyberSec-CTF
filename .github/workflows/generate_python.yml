@@ -1,0 +1,43 @@
+name: Generate Python CTF Artifacts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate_files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python Libraries
+        run: pip install scapy Pillow pycryptodome
+
+      - name: Prepare Stego Assets (Safety Check)
+        run: |
+          cd challenge_generators
+          # Generates a blank red image if you haven't uploaded a cover.png
+          python -c "from PIL import Image; import os; Image.new('RGB', (800, 600), color = 'red').save('cover.png') if not os.path.exists('cover.png') else None"
+          # Generates a dummy file if you haven't uploaded a secret.wav
+          bash -c 'if [ ! -f secret.wav ]; then echo "tcs{lsb_audio_extracted}" > secret.wav; fi'
+
+      - name: Run Generation Scripts
+        run: |
+          cd challenge_generators
+          python generate_pcap.py
+          python generate_steg.py
+          python generate_rsa.py > intercepted_key.txt
+
+      - name: Upload Finished Files
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-ctf-artifacts
+          path: |
+            challenge_generators/arp_trace.pcap
+            challenge_generators/stego_challenge.png
+            challenge_generators/intercepted_key.txt
