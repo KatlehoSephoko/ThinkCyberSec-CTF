@@ -97,21 +97,26 @@
             const grid = document.getElementById('challenges-grid');
             grid.innerHTML = '';
 
-            data.challenges.forEach(chal => {
+                    data.challenges.forEach(chal => {
                 const isSolved = chal.status === 'solved';
                 const bgClass = isSolved ? 'bg-green-900/30 border-green-500' : 'bg-gray-800 border-gray-600';
+                
+                // Creates a download button if the file exists
+                const downloadBtn = chal.download ? `<a href="${chal.download}" download class="block text-center w-full bg-blue-600 hover:bg-blue-500 text-white py-2 mb-3 rounded border border-blue-400 transition text-xs font-bold tracking-wider">⬇️ DOWNLOAD ARTIFACT</a>` : '';
                 
                 grid.innerHTML += `
                     <div class="p-4 rounded border ${bgClass} flex flex-col justify-between">
                         <div>
                             <span class="text-xs text-gray-400 uppercase tracking-widest">${chal.category}</span>
                             <h3 class="text-lg font-bold text-white mb-1">${chal.name}</h3>
-                            <p class="text-sm text-yellow-400 mb-4">${chal.points} Points</p>
+                            <p class="text-sm text-yellow-400 mb-2">${chal.points} Points</p>
+                            <p class="text-xs text-gray-300 mb-4">${chal.description}</p>
                         </div>
                         
                         ${isSolved ? 
                             `<div class="text-center p-2 bg-green-800/50 text-green-300 rounded border border-green-600">SOLVED</div>` :
                             `<div>
+                                ${downloadBtn}
                                 <input type="text" id="flag-${chal.id}" placeholder="${chal.clue}" class="w-full p-2 mb-2 bg-gray-900 text-green-500 placeholder-gray-600 rounded border border-gray-700 focus:outline-none focus:border-green-500 font-mono text-sm">
                                 <button onclick="submitFlag('${chal.id}')" class="w-full bg-gray-700 hover:bg-green-600 text-white py-2 rounded transition text-sm font-bold">SUBMIT FLAG</button>
                             </div>`
@@ -119,6 +124,7 @@
                     </div>
                 `;
             });
+
         }
 
         async function submitFlag(challengeId) {
