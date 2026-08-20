@@ -1,0 +1,28 @@
+name: Compile CTF Binaries
+
+on:
+  push:
+    paths:
+      - 'challenge_generators/*.c'
+  workflow_dispatch:
+
+jobs:
+  build_binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Compile secure_vault (rev_1)
+        run: gcc challenge_generators/secure_vault.c -o secure_vault.bin
+
+      - name: Compile patch_me (rev_2)
+        run: gcc challenge_generators/patch_me.c -o patch_me
+
+      - name: Upload Finished Binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-rev-challenges
+          path: |
+            secure_vault.bin
+            patch_me
