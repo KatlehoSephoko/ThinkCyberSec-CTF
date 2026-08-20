@@ -42,11 +42,9 @@ function saveStateToDB() {
 // --- ENDPOINTS ---
 app.post('/api/register', (req, res) => {
     const { teamName, email, password } = req.body;
-    
     if (teamState[teamName] || Object.values(teamState).some(t => t.email === email)) {
         return res.status(400).json({ error: 'Team name or email already registered.' });
     }
-    
     teamState[teamName] = { email, password, solved: [], attempts: {}, penaltyPoints: 0 };
     saveStateToDB();
     res.json({ message: 'Team successfully registered! You can now log in.' });
@@ -57,7 +55,6 @@ app.post('/api/login', (req, res) => {
     const teamName = Object.keys(teamState).find(name => 
         teamState[name].email === email && teamState[name].password === password
     );
-    
     if (teamName) {
         res.json({ message: `Welcome, ${teamName}!`, team: teamName });
     } else {
@@ -122,16 +119,24 @@ app.post('/api/submit-flag', (req, res) => {
     }
 });
 
+// NEW SCOREBOARD ENDPOINT (Includes Graph History)
 app.get('/api/scoreboard', (req, res) => {
     const leaderboard = Object.entries(teamState).map(([teamName, state]) => {
         let score = 0;
+        let history = [{ y: 0, challenge: "Started CTF" }];
+        
         state.solved.forEach(id => {
             const chal = challenges.find(c => c.id === id);
-            if (chal) score += chal.points;
+            if (chal) {
+                score += chal.points;
+                history.push({ y: score, challenge: chal.name });
+            }
         });
-        score -= (state.penaltyPoints || 0);
-        return { teamName, score, solvedCount: state.solved.length };
+        
+        const finalScore = score - (state.penaltyPoints || 0);
+        return { teamName, score: finalScore, solvedCount: state.solved.length, history };
     });
+    
     leaderboard.sort((a, b) => b.score - a.score);
     res.json(leaderboard);
 });
