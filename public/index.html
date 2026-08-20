@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThickCyberSec CTF Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-green-500 font-mono flex flex-col items-center min-h-screen p-4">
+
+    <!-- AUTHENTICATION SECTION -->
+    <div id="auth-section" class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md border border-green-500 mt-10">
+        <h1 class="text-2xl font-bold text-center mb-6 text-white">ThickCyberSec CTF</h1>
+        
+        <form id="authForm" class="space-y-4">
+            <input type="text" id="teamName" placeholder="Team Name (Registration Only)" class="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-green-500 hidden">
+            <input type="email" id="email" placeholder="Registration Email" required class="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-green-500">
+            <input type="password" id="password" placeholder="Shared Team Password" required class="w-full p-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-green-500">
+            
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">LOGIN</button>
+            <p class="text-sm text-center text-gray-400 mt-2">
+                <span id="toggleText">Need to register?</span> 
+                <a href="#" id="toggleMode" class="text-green-400 hover:underline">Click here</a>
+            </p>
+        </form>
+        <div id="authMsg" class="mt-4 text-center text-sm hidden"></div>
+    </div>
+
+    <!-- DASHBOARD SECTION -->
+    <div id="dashboard-section" class="w-full max-w-5xl hidden flex-col items-center mt-6">
+        <div class="w-full flex justify-between items-center bg-gray-800 p-4 rounded border border-green-500 mb-6">
+            <h1 class="text-xl md:text-2xl font-bold text-white">ThickCyberSec CTF</h1>
+            <div class="text-right">
+                <p class="text-gray-400 text-sm">Team: <span id="displayTeam" class="text-green-400 font-bold"></span></p>
+                <p class="text-gray-400 text-sm">Score: <span id="displayScore" class="text-yellow-400 font-bold"></span> pts</p>
+            </div>
+        </div>
+        
+        <div class="w-full text-center mb-6">
+            <a href="/scoreboard.html" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded border border-gray-500 transition">View Live Leaderboard</a>
+        </div>
+
+        <div id="challenges-grid" class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Challenges injected here -->
+        </div>
+    </div>
+
+    <script>
+        let isLogin = true;
+        let currentTeam = "";
+
+        document.getElementById('toggleMode').addEventListener('click', (e) => {
+            e.preventDefault();
+            isLogin = !isLogin;
+            document.getElementById('teamName').classList.toggle('hidden');
+            document.getElementById('submitBtn').textContent = isLogin ? 'LOGIN' : 'REGISTER';
+            document.getElementById('submitBtn').className = isLogin ? 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded' : 'w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded';
+            document.getElementById('toggleText').textContent = isLogin ? 'Need to register?' : 'Already registered?';
+            document.getElementById('authMsg').classList.add('hidden');
+        });
+
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const endpoint = isLogin ? '/api/login' : '/api/register';
+            const payload = {
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+            if (!isLogin) payload.teamName = document.getElementById('teamName').value;
+
+            const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await res.json();
+
+            const msgBox = document.getElementById('authMsg');
+            msgBox.textContent = data.message || data.error;
+            msgBox.className = `mt-4 text-center text-sm p-2 rounded ${!res.ok ? 'bg-red-900 text-red-200' : 'bg-green-900 text-green-200'} block`;
+
+            if (res.ok && isLogin) {
+                currentTeam = data.team;
+                setTimeout(() => {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('dashboard-section').classList.remove('hidden');
+                    document.getElementById('dashboard-section').classList.add('flex');
+                    document.getElementById('displayTeam').textContent = currentTeam;
+                    loadChallenges();
+                }, 1000);
+            } else if (res.ok && !isLogin) {
+                document.getElementById('authForm').reset();
+            }
+        });
+
+        async function loadChallenges() {
+            const res = await fetch(`/api/challenges?team=${encodeURIComponent(currentTeam)}`);
+            const data = await res.json();
+            document.getElementById('displayScore').textContent = data.score;
+            
+            const grid = document.getElementById('challenges-grid');
+            grid.innerHTML = '';
+
+            data.challenges.forEach(chal => {
+                const isSolved = chal.status === 'solved';
+                const bgClass = isSolved ? 'bg-green-900/30 border-green-500' : 'bg-gray-800 border-gray-600';
+                
+                grid.innerHTML += `
+                    <div class="p-4 rounded border ${bgClass} flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs text-gray-400 uppercase tracking-widest">${chal.category}</span>
+                            <h3 class="text-lg font-bold text-white mb-1">${chal.name}</h3>
+                            <p class="text-sm text-yellow-400 mb-4">${chal.points} Points</p>
+                        </div>
+                        
+                        ${isSolved ? 
+                            `<div class="text-center p-2 bg-green-800/50 text-green-300 rounded border border-green-600">SOLVED</div>` :
+                            `<div>
+                                <input type="text" id="flag-${chal.id}" placeholder="${chal.clue}" class="w-full p-2 mb-2 bg-gray-900 text-green-500 placeholder-gray-600 rounded border border-gray-700 focus:outline-none focus:border-green-500 font-mono text-sm">
+                                <button onclick="submitFlag('${chal.id}')" class="w-full bg-gray-700 hover:bg-green-600 text-white py-2 rounded transition text-sm font-bold">SUBMIT FLAG</button>
+                            </div>`
+                        }
+                    </div>
+                `;
+            });
+        }
+
+        async function submitFlag(challengeId) {
+            const flag = document.getElementById(`flag-${challengeId}`).value;
+            if (!flag) return alert("Enter a flag first!");
+
+            const res = await fetch('/api/submit-flag', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teamName: currentTeam, challengeId, submittedFlag: flag })
+            });
+            const data = await res.json();
+            alert(data.message || data.error);
+            loadChallenges(); 
+        }
+    </script>
+</body>
+</html>
