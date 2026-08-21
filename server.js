@@ -154,17 +154,23 @@ app.get('/api/scoreboard', (req, res) => {
     res.json(leaderboard);
 });
 
-// Boot sequence with database lock
+// --- BOOT UP SEQUENCE ---
 pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
     .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
     .then(res => {
         if (res.rows.length > 0) {
             teamState = res.rows[0].state;
-            console.log("Team state restored from Supabase!");
+            console.log("✅ Team state safely restored from Supabase!");
+        } else {
+            console.log("⚠️ No existing database found. Starting fresh.");
         }
-        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        
+        // ONLY open the doors if the database connected perfectly
+        app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
     })
     .catch(err => {
-        console.error("Database initialization error:", err);
-        app.listen(PORT, () => console.log(`Server running on port ${PORT} (DB Error)`));
+        // THE FIX: Do NOT start the server with empty memory if the DB fails!
+        console.error("❌ CRITICAL DB ERROR: Could not load Supabase data:", err);
+        console.error("Shutting down to prevent data wipe. Render will auto-restart.");
+        process.exit(1); 
     });
