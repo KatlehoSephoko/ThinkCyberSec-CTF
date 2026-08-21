@@ -169,12 +169,10 @@
                         ${downloadIcon} Download File
                     </a>` : '';
                 
-                // --- NEW DYNAMIC MATH ---
+                // Calculates the real-time value of the challenge. Math.max prevents the score going into negatives.
                 const attemptsMade = chal.attemptsMade || 0;
                 const penaltyAmount = chal.penalty || 0;
-                
-                // Calculates the real-time value of the challenge
-                const currentCardPoints = chal.points - (attemptsMade * penaltyAmount);
+                const currentCardPoints = Math.max(0, chal.points - (attemptsMade * penaltyAmount));
 
                 // Creates the student-friendly warning message directly below the description
                 let attemptMsg = '';
@@ -248,10 +246,7 @@
                 btn.innerHTML = originalText;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 
-                if (data.newScore !== undefined) {
-                    document.getElementById('displayScore').textContent = data.newScore;
-                }
-
+                // Pop the message (either success or the new localized error message)
                 setTimeout(() => {
                     if(res.ok) {
                         alert(`✅ ${data.message}`);
@@ -260,6 +255,7 @@
                         flagInput.value = '';
                         flagInput.focus();
                     }
+                    // Reloads the cards so the points on the specific card drop immediately
                     loadChallenges(); 
                 }, 50);
 
