@@ -34,7 +34,8 @@ app.post('/api/register', (req, res) => {
     if (teamState[teamName] || Object.values(teamState).some(t => t.email === email)) {
         return res.status(400).json({ error: 'Team name or email already registered.' });
     }
-    teamState[teamName] = { email, password, solved: [], attempts: {}, penaltyPoints: 0 };
+    // Removed global penaltyPoints, only tracking attempts per challenge now
+    teamState[teamName] = { email, password, solved: [], attempts: {} };
     saveStateToDB();
     res.json({ message: 'Team successfully registered! You can now log in.' });
 });
@@ -58,11 +59,16 @@ app.get('/api/challenges', (req, res) => {
     const state = teamState[teamName];
     let cumulativeScore = 0;
 
+    // Calculate total score based only on earned points from solved challenges
     state.solved.forEach(id => {
         const chal = challenges.find(c => c.id === id);
-        if (chal) cumulativeScore += chal.points;
+        if (chal) {
+            const fails = state.attempts[id] || 0;
+            const penalty = chal.penalty || 0;
+            const earnedPoints = Math.max(0, chal.points - (fails * penalty));
+            cumulativeScore += earnedPoints;
+        }
     });
-    cumulativeScore -= (state.penaltyPoints || 0);
 
     const availableChallenges = challenges.map(chal => {
         const isSolved = state.solved.includes(chal.id);
@@ -74,7 +80,7 @@ app.get('/api/challenges', (req, res) => {
             return { 
                 ...safeData, 
                 status: isSolved ? 'solved' : 'open',
-                attemptsMade: state.attempts[chal.id] || 0 // Sends attempt history to frontend
+                attemptsMade: state.attempts[chal.id] || 0 
             };
         }
         return null;
@@ -100,34 +106,27 @@ app.post('/api/submit-flag', (req, res) => {
         state.solved.push(challengeId);
         saveStateToDB();
         
-        // Let the team know if their previous penalties ate into their reward
-        const penaltyTaken = currentAttempts * (challenge.penalty || 0);
-        let msg = `Flag accepted! +${challenge.points} pts`;
-        if (penaltyTaken > 0) {
-            msg += ` (Note: You lost ${penaltyTaken} points from previous failed attempts)`;
+        // Calculate the actual points awarded for solving it
+        const penaltyAmount = challenge.penalty || 0;
+        const earnedPoints = Math.max(0, challenge.points - (currentAttempts * penaltyAmount));
+        
+        let msg = `Flag accepted! +${earnedPoints} pts added to total score.`;
+        if (currentAttempts > 0 && penaltyAmount > 0) {
+            msg += ` (${currentAttempts} failed attempts reduced the value).`;
         }
         
         res.json({ success: true, message: msg });
     } else {
+        // Log the failure
         state.attempts[challengeId] = currentAttempts + 1;
         let errMsg = "Incorrect flag.";
         
         if (challenge.penalty) {
-            state.penaltyPoints = (state.penaltyPoints || 0) + challenge.penalty;
-            errMsg += ` ${challenge.penalty} points deducted from your dashboard!`;
+            errMsg += ` Challenge value reduced by ${challenge.penalty} points.`;
         }
         
         saveStateToDB();
-        
-        // Calculate the live score so the dashboard updates instantly
-        let newScore = 0;
-        state.solved.forEach(id => {
-            const c = challenges.find(x => x.id === id);
-            if (c) newScore += c.points;
-        });
-        newScore -= (state.penaltyPoints || 0);
-        
-        res.status(401).json({ error: errMsg, newScore });
+        res.status(401).json({ error: errMsg }); // Total score does not drop, so no need to send newScore
     }
 });
 
@@ -139,13 +138,16 @@ app.get('/api/scoreboard', (req, res) => {
         state.solved.forEach(id => {
             const chal = challenges.find(c => c.id === id);
             if (chal) {
-                score += chal.points;
+                const fails = state.attempts[id] || 0;
+                const penalty = chal.penalty || 0;
+                const earnedPoints = Math.max(0, chal.points - (fails * penalty));
+                
+                score += earnedPoints;
                 history.push({ y: score, challenge: chal.name });
             }
         });
         
-        const finalScore = score - (state.penaltyPoints || 0);
-        return { teamName, score: finalScore, solvedCount: state.solved.length, history };
+        return { teamName, score: score, solvedCount: state.solved.length, history };
     });
     
     leaderboard.sort((a, b) => b.score - a.score);
