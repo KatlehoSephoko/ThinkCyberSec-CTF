@@ -85,8 +85,10 @@ app.get('/api/challenges', (req, res) => {
 
     const availableChallenges = challenges.map(chal => {
         const isSolved = state.solved.includes(chal.id);
-        const isUnlocked = chal.requires.every(reqId => state.solved.includes(reqId));
-        const meetsScoreThreshold = chal.tier < 4 || cumulativeScore >= 1200;
+        
+        // 🚨 GOD MODE ACTIVATED: Instantly unlock ALL 31 challenges for testing!
+        const isUnlocked = true; 
+        const meetsScoreThreshold = true; 
 
         if (isUnlocked && meetsScoreThreshold) {
             const boughtCount = state.boughtClues[chal.id] || 0;
