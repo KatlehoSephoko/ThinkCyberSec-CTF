@@ -1,0 +1,1 @@
+[+] AuthId: 0;314981\nAdministrator : tcs{mimikatz_mem_dump}

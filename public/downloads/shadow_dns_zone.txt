@@ -1,0 +1,1 @@
+admin-portal.shadow.tcs{shadow_domain_found}.tcs.local IN A 10.0.0.5

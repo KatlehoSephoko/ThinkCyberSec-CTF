@@ -1,0 +1,1 @@
+ACTION=REDIRECT PATH=AS100->AS200->tcs{as_path_spoofed}
