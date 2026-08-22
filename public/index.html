@@ -95,11 +95,9 @@
             e.preventDefault();
             isLogin = !isLogin;
             document.getElementById('teamName').classList.toggle('hidden');
-            
             document.getElementById('submitBtn').textContent = isLogin ? 'LOGIN' : 'REGISTER TEAM';
             document.getElementById('toggleText').textContent = isLogin ? "Don't have an account?" : 'Already registered?';
             document.getElementById('toggleMode').textContent = isLogin ? 'Register Team' : 'Log in here';
-            
             document.getElementById('authMsg').classList.add('hidden');
         });
 
@@ -122,7 +120,6 @@
             if (res.ok && isLogin) {
                 currentTeam = data.team;
                 localStorage.setItem('currentTeam', currentTeam);
-                
                 setTimeout(() => {
                     document.getElementById('auth-section').classList.add('hidden');
                     document.getElementById('dashboard-section').classList.remove('hidden');
@@ -144,12 +141,7 @@
             const res = await fetch(`/api/challenges?team=${encodeURIComponent(currentTeam)}`);
             const data = await res.json();
             
-            const scoreElement = document.getElementById('displayScore');
-            let currentDisplayScore = parseInt(scoreElement.textContent);
-            if (currentDisplayScore !== data.score) {
-                scoreElement.textContent = data.score;
-            }
-            
+            document.getElementById('displayScore').textContent = data.score;
             const grid = document.getElementById('challenges-grid');
             grid.innerHTML = '';
 
@@ -169,23 +161,51 @@
                         ${downloadIcon} Download File
                     </a>` : '';
                 
-                // Calculates the real-time value of the challenge. Math.max prevents the score going into negatives.
-                const attemptsMade = chal.attemptsMade || 0;
-                const penaltyAmount = chal.penalty || 0;
-                const currentCardPoints = Math.max(0, chal.points - (attemptsMade * penaltyAmount));
-
-                // Creates the student-friendly warning message directly below the description
                 let attemptMsg = '';
                 if (chal.maxAttempts && !isSolved) {
-                    const attemptsLeft = chal.maxAttempts - attemptsMade;
+                    const attemptsLeft = chal.maxAttempts - (chal.attemptsMade || 0);
                     attemptMsg = `
-                        <div class="mt-3 mb-6 inline-flex items-center gap-2 text-[11px] font-bold text-rose-400 bg-rose-900/20 border border-rose-900/50 px-3 py-1.5 rounded uppercase tracking-wide">
+                        <div class="mt-4 mb-2 inline-flex items-center gap-2 text-[11px] font-bold text-rose-400 bg-rose-900/20 border border-rose-900/50 px-3 py-1.5 rounded uppercase tracking-wide">
                             <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             This challenge has ${chal.maxAttempts} attempts (${attemptsLeft} left)
                         </div>
                     `;
                 } else {
-                    attemptMsg = '<div class="mb-6"></div>';
+                    attemptMsg = '<div class="mb-4"></div>';
+                }
+
+                let evidenceBlock = '';
+                if (chal.evidence) {
+                    const safeEvidence = chal.evidence.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+                    evidenceBlock = `
+                        <div class="mt-4 p-3 bg-slate-950/80 rounded-lg border border-slate-700/50 shadow-inner overflow-x-auto">
+                            <code class="text-cyan-400 font-mono text-xs whitespace-pre-wrap leading-relaxed">${safeEvidence}</code>
+                        </div>
+                    `;
+                }
+
+                // NEW: Render the revealed hints!
+                let hintsBlock = '';
+                if (chal.revealedHints && chal.revealedHints.length > 0 && !isSolved) {
+                    hintsBlock = `
+                        <div class="mt-2 mb-4 space-y-2">
+                            ${chal.revealedHints.map((hintText, i) => `
+                                <div class="text-[11px] font-medium text-amber-300 bg-amber-900/20 border border-amber-500/30 p-2.5 rounded shadow-inner">
+                                    💡 <span class="font-bold">Hint ${i+1}:</span> ${hintText}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // NEW: The Buy Hint button (only shows if there's a hint they haven't bought yet)
+                let buyHintBtn = '';
+                if (chal.nextHintCost && !isSolved) {
+                    buyHintBtn = `
+                        <button onclick="buyHint('${chal.id}')" class="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold py-3 px-4 rounded text-[10px] tracking-wider transition uppercase shadow-lg shadow-amber-500/20 whitespace-nowrap ml-2">
+                            Buy Hint (-${chal.nextHintCost})
+                        </button>
+                    `;
                 }
                 
                 grid.innerHTML += `
@@ -193,15 +213,14 @@
                         <div>
                             <div class="flex justify-between items-start mb-4">
                                 <span class="bg-slate-800 border border-slate-600 text-slate-300 text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-full">${chal.category}</span>
-                                
-                                <!-- The Points text dynamically updates here based on fails -->
-                                <span class="font-mono text-sm font-bold ${isSolved ? 'text-emerald-400' : 'text-cyan-400'}">${currentCardPoints} PTS</span>
+                                <span class="font-mono text-sm font-bold ${isSolved ? 'text-emerald-400' : 'text-cyan-400'}">${chal.currentPoints} PTS</span>
                             </div>
                             <h3 class="text-xl font-bold text-white mb-2 leading-tight">${chal.name}</h3>
                             <p class="text-sm text-slate-400 leading-relaxed">${chal.description}</p>
                             
-                            <!-- The attempt message spawns right here -->
+                            ${evidenceBlock}
                             ${attemptMsg}
+                            ${hintsBlock}
                         </div>
                         
                         ${isSolved ? 
@@ -215,14 +234,38 @@
                                 <div class="relative mb-3">
                                     <input type="text" id="flag-${chal.id}" placeholder="${chal.clue}" class="w-full p-3 bg-slate-900/80 text-emerald-400 placeholder-slate-600 rounded border border-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 font-mono text-sm transition">
                                 </div>
-                                <button id="btn-${chal.id}" onclick="submitFlag('${chal.id}')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded transition font-bold text-sm tracking-wider uppercase shadow-lg shadow-cyan-500/20">
-                                    ${flagIcon} Submit Flag
-                                </button>
+                                <div class="flex">
+                                    <button id="btn-${chal.id}" onclick="submitFlag('${chal.id}')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded transition font-bold text-sm tracking-wider uppercase shadow-lg shadow-cyan-500/20 flex-1">
+                                        ${flagIcon} Submit
+                                    </button>
+                                    ${buyHintBtn}
+                                </div>
                             </div>`
                         }
                     </div>
                 `;
             });
+        }
+
+        async function buyHint(challengeId) {
+            if (!confirm("Are you sure? This will reduce the maximum points you can earn for this challenge.")) return;
+            
+            try {
+                const res = await fetch('/api/buy-hint', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ teamName: currentTeam, challengeId })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    loadChallenges(); // Reloads to show the hint box and deduct the points on the card!
+                } else {
+                    alert(`❌ ${data.error}`);
+                }
+            } catch (err) {
+                alert("Connection error!");
+            }
         }
 
         async function submitFlag(challengeId) {
@@ -246,26 +289,20 @@
                 btn.innerHTML = originalText;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 
-                // Pop the message (either success or the new localized error message)
                 setTimeout(() => {
-                    if(res.ok) {
-                        alert(`✅ ${data.message}`);
-                    } else {
-                        alert(`❌ ${data.error}`);
-                        flagInput.value = '';
-                        flagInput.focus();
-                    }
-                    // Reloads the cards so the points on the specific card drop immediately
+                    if(res.ok) alert(`✅ ${data.message}`);
+                    else alert(`❌ ${data.error}`);
+                    
+                    flagInput.value = '';
                     loadChallenges(); 
                 }, 50);
 
             } catch (err) {
-                alert("Something went wrong connecting to the server!");
+                alert("Connection error!");
                 btn.innerHTML = originalText;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
             }
         }
     </script>
 </body>
-<!-- TODO: Remove hardcoded admin token tcs{html_comments_leak} before go-live -->
 </html>
