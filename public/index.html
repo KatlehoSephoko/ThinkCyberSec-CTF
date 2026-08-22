@@ -184,7 +184,6 @@
                     `;
                 }
 
-                // NEW: Render the revealed hints!
                 let hintsBlock = '';
                 if (chal.revealedHints && chal.revealedHints.length > 0 && !isSolved) {
                     hintsBlock = `
@@ -198,7 +197,6 @@
                     `;
                 }
 
-                // NEW: The Buy Hint button (only shows if there's a hint they haven't bought yet)
                 let buyHintBtn = '';
                 if (chal.nextHintCost && !isSolved) {
                     buyHintBtn = `
@@ -259,7 +257,7 @@
                 const data = await res.json();
                 
                 if (res.ok) {
-                    loadChallenges(); // Reloads to show the hint box and deduct the points on the card!
+                    loadChallenges(); 
                 } else {
                     alert(`❌ ${data.error}`);
                 }
