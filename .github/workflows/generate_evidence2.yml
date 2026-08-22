@@ -1,0 +1,37 @@
+name: Generate SOC Evidence Bag 2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate_files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Evidence
+        run: |
+          mkdir -p evidence_bag
+          cd evidence_bag
+          
+          # NEW FILES FOR PLAINTEXT CHALLENGES
+          echo "admin-portal.shadow.tcs{shadow_domain_found}.tcs.local IN A 10.0.0.5" > shadow_dns_zone.txt
+          echo "{\"__proto__\":{\"admin\":true, \"flag\":\"tcs{js_prototype_polluted}\"}}" > malicious_payload.json
+          echo "[+] AuthId: 0;314981\nAdministrator : tcs{mimikatz_mem_dump}" > lsass_dump.txt
+          echo "ACTION=REDIRECT PATH=AS100->AS200->tcs{as_path_spoofed}" > bgp_routing.log
+          echo "0x08048000: tcs{upx_unpacked_manual}" > upx_oep_dump.txt
+          echo "<resources><string name=\"prod_api_key\">tcs{strings_xml_key}</string></resources>" > strings.xml
+          echo "action=\"com.tcs.admin.AUTH\" payload=\"tcs{intent_intercepted}\"" > intent_capture.log
+          
+          # ORIGINAL FILES
+          echo "CONFIDENTIAL THREAT DOSSIER: Target uses alias @GhostAdmin99. Recovered fragment: tcs{intro_to_recon}" > osint_dossier.txt
+          echo "192.168.1.50 - [20/Aug/2026] \"GET /login?user=admin' OR 1=1-- HTTP/1.1\" 200 - FLAG: tcs{boolean_based_bypass}" > web_audit_logs.txt
+          echo "192.168.1.50 - [20/Aug/2026] \"GET /api/proxy?url=http://169.254.169.254/ tcs{internal_admin_bypass}\" 200" >> web_audit_logs.txt
+          echo "SHIFT-13: gpf{onfvp_fhofgvghgvba}" > crypto_intercepts.txt
+          echo "admin:e56bacdd9e77c570bfa3f80c2f213009" > hash_dump.txt
+          echo "0x00401000: cmp eax, 0x1 ; jne 0x00401050 ; FLAG=tcs{jump_instruction_patched}" > malware_assembly.txt
+          echo "<manifest><activity android:name=\".SecretConfig\" android:exported=\"true\"><!-- tcs{exported_activity_found} --></activity></manifest>" > android_manifest.xml
+
+      - name: Upload Evidence Bag
+        uses: actions/upload-artifact@v4
+        with:
+          name: SOC-Evidence-Bag
+          path: evidence_bag/
