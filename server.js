@@ -7,7 +7,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// THE FIX: Strict Cache-Control headers to force fresh UI rendering
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: function (res, path) {
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+    }
+}));
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -27,7 +35,6 @@ function saveStateToDB() {
     ).catch(err => console.error("Failed to save state:", err));
 }
 
-// NEW HELPER: Calculates exact points based on fails and bought hints
 function calculateEarnedPoints(chal, state) {
     const fails = state.attempts[chal.id] || 0;
     const penalty = chal.penalty || 0;
@@ -48,7 +55,6 @@ app.post('/api/register', (req, res) => {
     if (teamState[teamName] || Object.values(teamState).some(t => t.email === email)) {
         return res.status(400).json({ error: 'Team name or email already registered.' });
     }
-    // Added boughtClues tracking
     teamState[teamName] = { email, password, solved: [], attempts: {}, boughtClues: {} };
     saveStateToDB();
     res.json({ message: 'Team successfully registered! You can now log in.' });
@@ -68,7 +74,7 @@ app.get('/api/challenges', (req, res) => {
     if (!teamName || !teamState[teamName]) return res.status(401).json({ error: "Invalid team" });
 
     const state = teamState[teamName];
-    state.boughtClues = state.boughtClues || {}; // Safety net for old accounts
+    state.boughtClues = state.boughtClues || {}; 
     const challenges = getChallenges(); 
     let cumulativeScore = 0;
 
@@ -112,7 +118,6 @@ app.get('/api/challenges', (req, res) => {
     res.json({ score: cumulativeScore, challenges: availableChallenges });
 });
 
-// NEW ENDPOINT: Buy a Hint
 app.post('/api/buy-hint', (req, res) => {
     const { teamName, challengeId } = req.body;
     const state = teamState[teamName];
@@ -186,7 +191,6 @@ app.get('/api/scoreboard', (req, res) => {
     res.json(leaderboard);
 });
 
-// --- BOOT UP SEQUENCE WITH RETRY LOOP ---
 function initializeDatabase(retries = 5) {
     pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
         .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
@@ -197,8 +201,6 @@ function initializeDatabase(retries = 5) {
             } else {
                 console.log("⚠️ No existing database found. Starting fresh.");
             }
-            
-            // Only start the server once the DB is fully awake and connected
             app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         })
         .catch(err => {
@@ -213,5 +215,4 @@ function initializeDatabase(retries = 5) {
         });
 }
 
-// Start the boot sequence
 initializeDatabase();
