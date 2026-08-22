@@ -19,7 +19,8 @@
     "points": 150, 
     "flag": "tcs{gh_commit_recovered}", 
     "clue": "Decode the Base64 string.", 
-    "description": "The target deleted their code, but we managed to scrape a leaked commit note! Decode this Base64 string to see what they were hiding:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">dGNze2doX2NvbW1pdF9yZWNvdmVyZWR9</code>",
+    "description": "The target deleted their code, but we managed to scrape a leaked commit note! Decode this Base64 string to see what they were hiding:",
+    "evidence": "dGNze2doX2NvbW1pdF9yZWNvdmVyZWR9",
     "requires": ["osint_1"] 
   },
   { 
@@ -30,7 +31,8 @@
     "points": 250, 
     "flag": "tcs{archived_forum_post}", 
     "clue": "Use a ROT47 decoder.", 
-    "description": "We found a deleted post on an underground hacker forum. The attacker used a ROT47 cipher to hide their text. Crack it:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">E4DlzC49:G6507@CF>0A@DEX</code>",
+    "description": "We found a deleted post on an underground hacker forum. The attacker used a ROT47 cipher to hide their text. Crack it:",
+    "evidence": "E4DlzC49:G6507@CF>0A@DEX",
     "requires": ["osint_2"], 
     "penalty": 5, 
     "maxAttempts": 3 
@@ -43,7 +45,8 @@
     "points": 350, 
     "flag": "tcs{shadow_domain_found}", 
     "clue": "Look at the subdomain string.", 
-    "description": "We found a secret DNS record pointing to a hidden server! Read this intercepted DNS entry carefully to spot the flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">admin-portal.shadow.tcs{shadow_domain_found}.tcs.local IN A 10.0.0.5</code>",
+    "description": "We found a secret DNS record pointing to a hidden server! Download this intercepted DNS zone file and read carefully to spot the flag.",
+    "download": "/downloads/shadow_dns_zone.txt",
     "requires": ["osint_3"] 
   },
   { 
@@ -54,7 +57,7 @@
     "points": 50, 
     "flag": "tcs{html_comments_leak}", 
     "clue": "Read the developer comment.", 
-    "description": "A junior developer was feeling lazy and left a comment directly in the website's HTML code. Can you spot what they accidentally exposed?<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">&lt;!-- TODO: Remove hardcoded token tcs{html_comments_leak} before go-live --&gt;</code>",
+    "description": "A junior developer was feeling lazy and left a comment directly in the HTML code. Right-click this very dashboard, select 'Inspect', and look through the source code to find the hidden token!",
     "requires": [] 
   },
   { 
@@ -91,7 +94,8 @@
     "points": 400, 
     "flag": "tcs{js_prototype_polluted}", 
     "clue": "Look at the flag attribute.", 
-    "description": "The web app handles user settings really poorly. We caught this malicious JSON payload the attacker sent to give themselves admin rights. Grab the flag from it:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">{\"__proto__\":{\"admin\":true, \"flag\":\"tcs{js_prototype_polluted}\"}}</code>",
+    "description": "The web app handles user settings really poorly. We caught a malicious JSON payload the attacker sent to give themselves admin rights. Download the payload and grab the flag from it.",
+    "download": "/downloads/malicious_payload.json",
     "requires": ["web_3"] 
   },
   { 
@@ -114,7 +118,8 @@
     "points": 150, 
     "flag": "tcs{polyalphabetic_cracked}", 
     "clue": "Use an online Vigenere decoder.", 
-    "description": "This cipher is a bit tougher because it uses a repeating keyword. Crack the Vigenère cipher below and wrap your answer in tcs{} to get the flag.<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">Ciphertext: hsnirsphlcvvag_elrgcif<br>Key: SECURE</code>",
+    "description": "This cipher is a bit tougher because it uses a repeating keyword. Crack the Vigenère cipher below and wrap your answer in tcs{} to get the flag.",
+    "evidence": "Ciphertext: hsnirsphlcvvag_elrgcif\nKey: SECURE",
     "requires": ["crypto_1"] 
   },
   { 
@@ -137,7 +142,8 @@
     "points": 400, 
     "flag": "tcs{ecdsa_nonce_reused}", 
     "clue": "Use a Hex to Text converter.", 
-    "description": "We managed to extract this raw Hexadecimal string from the attacker's memory. Convert the Hex characters back into normal ASCII text to read the flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">7463737b65636473615f6e6f6e63655f7265757365647d</code>",
+    "description": "We managed to extract this raw Hexadecimal string from the attacker's memory. Convert the Hex characters back into normal ASCII text to read the flag:",
+    "evidence": "7463737b65636473615f6e6f6e63655f7265757365647d",
     "requires": ["crypto_3"], 
     "penalty": 20, 
     "maxAttempts": 3 
@@ -186,7 +192,8 @@
     "points": 400, 
     "flag": "tcs{mimikatz_mem_dump}", 
     "clue": "Look for the plaintext password.", 
-    "description": "We took a snapshot of a compromised computer's RAM. We found this chunk of data inside the Windows password process (LSASS). Find the flag in the dump:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">[+] AuthId: 0;314981\nAdministrator : tcs{mimikatz_mem_dump}</code>",
+    "description": "We took a snapshot of a compromised computer's RAM. We found a chunk of data inside the Windows password process (LSASS). Download the dump and find the flag.",
+    "download": "/downloads/lsass_dump.txt",
     "requires": ["for_3"], 
     "penalty": 10 
   },
@@ -210,7 +217,8 @@
     "points": 150, 
     "flag": "tcs{as_path_spoofed}", 
     "clue": "Look at the path string.", 
-    "description": "Our internet traffic is being routed to the wrong place! We pulled this log showing a fake network path. Can you spot the fake Autonomous System (AS)?<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">ACTION=REDIRECT PATH=AS100-&gt;AS200-&gt;tcs{as_path_spoofed}</code>",
+    "description": "Our internet traffic is being routed to the wrong place! Download this BGP routing log showing a fake network path. Can you spot the fake Autonomous System (AS)?",
+    "download": "/downloads/bgp_routing.log",
     "requires": ["net_1"] 
   },
   { 
@@ -221,7 +229,8 @@
     "points": 300, 
     "flag": "tcs{fragmented_icmp_payload}", 
     "clue": "Convert the Hex bytes back into text.", 
-    "description": "The hacker snuck data right past the firewall by hiding it inside ping requests (ICMP). We grabbed the raw Hex bytes of the payload. Translate it to text to get the flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">74 63 73 7b 66 72 61 67 6d 65 6e 74 65 64 5f 69 63 6d 70 5f 70 61 79 6c 6f 61 64 7d</code>",
+    "description": "The hacker snuck data right past the firewall by hiding it inside ping requests (ICMP). We grabbed the raw Hex bytes of the payload. Translate it to text to get the flag:",
+    "evidence": "74 63 73 7b 66 72 61 67 6d 65 6e 74 65 64 5f 69 63 6d 70 5f 70 61 79 6c 6f 61 64 7d",
     "requires": ["net_2"], 
     "penalty": 5, 
     "maxAttempts": 3 
@@ -234,7 +243,8 @@
     "points": 400, 
     "flag": "tcs{malicious_dns_txt}", 
     "clue": "Decode the weird-looking subdomain.", 
-    "description": "The malware is talking to the hacker by making fake DNS requests! Check out this command we caught. Decode the Base64 part to find the hidden flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">nslookup -type=txt dGNze21hbGljaW91c19kbnNfdHh0fQ==.c2.server.local</code>",
+    "description": "The malware is talking to the hacker by making fake DNS requests! Check out this command we caught. Decode the Base64 part to find the hidden flag:",
+    "evidence": "nslookup -type=txt dGNze21hbGljaW91c19kbnNfdHh0fQ==.c2.server.local",
     "requires": ["net_3"] 
   },
   { 
@@ -257,7 +267,8 @@
     "points": 150, 
     "flag": "tcs{P@ssw0rd2026!}", 
     "clue": "Wrap the cracked password in tcs{}.", 
-    "description": "The user got smart and added symbols to their password. Crack this SHA256 hash, then put your answer inside the tcs{} format to submit it:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">747c3cfc40ec4debd38031e2fbcc902377b25055b80a47d2197171c77f0a7cb2</code>",
+    "description": "The user got smart and added symbols to their password. Crack this SHA256 hash, then put your answer inside the tcs{} format to submit it:",
+    "evidence": "747c3cfc40ec4debd38031e2fbcc902377b25055b80a47d2197171c77f0a7cb2",
     "requires": ["crack_1"] 
   },
   { 
@@ -268,7 +279,8 @@
     "points": 250, 
     "flag": "tcs{Pr3t0r1a_Admin!}", 
     "clue": "The password is based on the capital city of Pretoria.", 
-    "description": "This user bases their passwords on their hometown. Crack this MD5 hash using some creative local keywords, then submit it in the tcs{} format:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">146bf99cfc1a5d62557ff1709abf3dfd</code>",
+    "description": "This user bases their passwords on their hometown. Crack this MD5 hash using some creative local keywords, then submit it in the tcs{} format:",
+    "evidence": "146bf99cfc1a5d62557ff1709abf3dfd",
     "requires": ["crack_2"], 
     "penalty": 5, 
     "maxAttempts": 3 
@@ -319,7 +331,8 @@
     "points": 300, 
     "flag": "tcs{upx_unpacked_manual}", 
     "clue": "Just copy the flag string.", 
-    "description": "The malware was packed tightly to hide its code. We dumped it out of the computer's memory while it was running and found this string. Grab the flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">0x08048000: tcs{upx_unpacked_manual}</code>",
+    "description": "The malware was packed tightly to hide its code. We dumped it out of the computer's memory while it was running. Download the memory snippet to grab the flag.",
+    "download": "/downloads/upx_oep_dump.txt",
     "requires": ["rev_2"] 
   },
   { 
@@ -330,7 +343,8 @@
     "points": 400, 
     "flag": "tcs{opcode_reversed}", 
     "clue": "Read the pushes backward from right to left.", 
-    "description": "The malware runs in its own weird virtual machine! We caught the commands it sent to the memory stack. Read this sequence backwards to build the flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">PUSH '}'; PUSH 'd'; PUSH 'e'; PUSH 's'; PUSH 'r'; PUSH 'e'; PUSH 'v'; PUSH 'e'; PUSH 'r'; PUSH '_'; PUSH 'e'; PUSH 'd'; PUSH 'o'; PUSH 'c'; PUSH 'p'; PUSH 'o'; PUSH '{'; PUSH 's'; PUSH 'c'; PUSH 't';</code>",
+    "description": "The malware runs in its own weird virtual machine! We caught the commands it sent to the memory stack. Read this sequence backwards to build the flag:",
+    "evidence": "PUSH '}'; PUSH 'd'; PUSH 'e'; PUSH 's'; PUSH 'r'; PUSH 'e'; PUSH 'v'; PUSH 'e'; PUSH 'r'; PUSH '_'; PUSH 'e'; PUSH 'd'; PUSH 'o'; PUSH 'c'; PUSH 'p'; PUSH 'o'; PUSH '{'; PUSH 's'; PUSH 'c'; PUSH 't';",
     "requires": ["rev_3"], 
     "penalty": 15, 
     "maxAttempts": 3 
@@ -355,7 +369,8 @@
     "points": 150, 
     "flag": "tcs{strings_xml_key}", 
     "clue": "Extract the key from inside the XML tags.", 
-    "description": "Rule #1 of app development: Never hardcode your API keys! We found this snippet in the app's strings.xml file. Grab the flag:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">&lt;string name=\"prod_api_key\"&gt;tcs{strings_xml_key}&lt;/string&gt;</code>",
+    "description": "Rule #1 of app development: Never hardcode your API keys! We pulled the strings.xml file out of the decompiled APK. Download it and find the flag.",
+    "download": "/downloads/strings.xml",
     "requires": ["and_1"] 
   },
   { 
@@ -366,7 +381,8 @@
     "points": 300, 
     "flag": "tcs{intent_intercepted}", 
     "clue": "Look at the payload string.", 
-    "description": "The Android app was shouting sensitive info to the whole phone! We intercepted this system broadcast. Grab the flag from the payload data:<br><br><code class=\"block p-2 bg-slate-900 text-cyan-400 rounded border border-slate-700 font-mono text-xs overflow-x-auto\">action=\"com.tcs.admin.AUTH\" payload=\"tcs{intent_intercepted}\"</code>",
+    "description": "The Android app was shouting sensitive info to the whole phone! We intercepted a system broadcast log. Download it and grab the flag from the payload data.",
+    "download": "/downloads/intent_capture.log",
     "requires": ["and_2"] 
   }
 ]
