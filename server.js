@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// THE FIX: Strict Cache-Control headers to force fresh UI rendering
+// Strict Cache-Control headers to force fresh UI rendering
 app.use(express.static(path.join(__dirname, 'public'), {
     setHeaders: function (res, path) {
         res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -86,9 +86,9 @@ app.get('/api/challenges', (req, res) => {
     const availableChallenges = challenges.map(chal => {
         const isSolved = state.solved.includes(chal.id);
         
-        // 🚨 GOD MODE ACTIVATED: Instantly unlock ALL 31 challenges for testing!
-        const isUnlocked = true; 
-        const meetsScoreThreshold = true; 
+        // THE FIX: God Mode deactivated. Progression locks strictly enforced.
+        const isUnlocked = chal.requires.every(reqId => state.solved.includes(reqId));
+        const meetsScoreThreshold = chal.tier < 4 || cumulativeScore >= 1200;
 
         if (isUnlocked && meetsScoreThreshold) {
             const boughtCount = state.boughtClues[chal.id] || 0;
