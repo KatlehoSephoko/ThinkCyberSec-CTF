@@ -186,16 +186,32 @@ app.get('/api/scoreboard', (req, res) => {
     res.json(leaderboard);
 });
 
-pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
-    .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
-    .then(res => {
-        if (res.rows.length > 0) {
-            teamState = res.rows[0].state;
-            console.log("✅ Team state safely restored from Supabase!");
-        }
-        app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-    })
-    .catch(err => {
-        console.error("❌ CRITICAL DB ERROR:", err);
-        process.exit(1); 
-    });
+// --- BOOT UP SEQUENCE WITH RETRY LOOP ---
+function initializeDatabase(retries = 5) {
+    pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state JSONB)`)
+        .then(() => pool.query('SELECT state FROM global_state WHERE id = 1'))
+        .then(res => {
+            if (res.rows.length > 0) {
+                teamState = res.rows[0].state;
+                console.log("✅ Team state safely restored from Supabase!");
+            } else {
+                console.log("⚠️ No existing database found. Starting fresh.");
+            }
+            
+            // Only start the server once the DB is fully awake and connected
+            app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+        })
+        .catch(err => {
+            console.error(`⚠️ DB Error: Supabase might be asleep. Retries left: ${retries}`);
+            if (retries > 0) {
+                console.log("⏳ Waiting 5 seconds for Supabase to wake up...");
+                setTimeout(() => initializeDatabase(retries - 1), 5000);
+            } else {
+                console.error("❌ CRITICAL: Could not connect to Supabase after multiple attempts.", err);
+                process.exit(1); 
+            }
+        });
+}
+
+// Start the boot sequence
+initializeDatabase();
