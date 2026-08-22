@@ -84,7 +84,10 @@
     "download": "/downloads/web_audit_logs.txt",
     "requires": ["web_2"], 
     "penalty": 10, 
-    "maxAttempts": 5 
+    "maxAttempts": 5,
+    "hints": [
+      { "cost": 15, "text": "Think about what a localhost IP address looks like. Is there a loopback address you can spot in the URL parameter?" }
+    ]
   },
   { 
     "id": "web_4", 
@@ -96,7 +99,11 @@
     "clue": "tcs{xx_xxxxxxxxx_xxxxxxxx}", 
     "description": "The web app handles user settings really poorly. We caught a malicious JSON payload the attacker sent to give themselves admin rights. Download the payload and grab the flag from it.",
     "download": "/downloads/malicious_payload.json",
-    "requires": ["web_3"] 
+    "requires": ["web_3"],
+    "hints": [
+      { "cost": 25, "text": "In JavaScript, you can pollute the prototype by injecting into the __proto__ object." },
+      { "cost": 25, "text": "Look closely at the JSON file. The attacker injected 'admin:true', but there is another property hidden right next to it." }
+    ]
   },
   { 
     "id": "crypto_1", 
@@ -132,7 +139,10 @@
     "clue": "tcs{x_xxx_x_xxxxxxxx}", 
     "description": "We found an encrypted message and a public RSA key in this file. The problem? The prime numbers they used are way too small! Factor them out to crack the encryption.",
     "download": "/downloads/intercepted_key.txt",
-    "requires": ["crypto_2"] 
+    "requires": ["crypto_2"],
+    "hints": [
+      { "cost": 15, "text": "You can use an online tool like FactorDB to break down the Modulus (N) into its P and Q factors instantly." }
+    ]
   },
   { 
     "id": "crypto_4", 
@@ -146,7 +156,11 @@
     "evidence": "7463737b65636473615f6e6f6e63655f7265757365647d",
     "requires": ["crypto_3"], 
     "penalty": 20, 
-    "maxAttempts": 3 
+    "maxAttempts": 3,
+    "hints": [
+      { "cost": 20, "text": "Don't overthink this one. The string is already the flag, it's just encoded in Base16 (Hex)." },
+      { "cost": 20, "text": "Throw the string into CyberChef and use the 'From Hex' operation." }
+    ]
   },
   { 
     "id": "for_1", 
@@ -195,7 +209,12 @@
     "description": "We took a snapshot of a compromised computer's RAM. We found a chunk of data inside the Windows password process (LSASS). Download the dump and find the flag.",
     "download": "/downloads/lsass_dump.txt",
     "requires": ["for_3"], 
-    "penalty": 10 
+    "penalty": 10,
+    "hints": [
+      { "cost": 20, "text": "The dump is from Mimikatz processing the sekurlsa::logonpasswords command." },
+      { "cost": 20, "text": "You are looking for the plaintext password belonging to the user 'Administrator'." },
+      { "cost": 20, "text": "Open the text file and literally CTRL+F for the word 'Administrator' to find it." }
+    ]
   },
   { 
     "id": "net_1", 
@@ -333,7 +352,10 @@
     "clue": "tcs{xxx_xxxxxxxx_xxxxxx}", 
     "description": "The malware was packed tightly to hide its code. We dumped it out of the computer's memory while it was running. Download the memory snippet to grab the flag.",
     "download": "/downloads/upx_oep_dump.txt",
-    "requires": ["rev_2"] 
+    "requires": ["rev_2"],
+    "hints": [
+      { "cost": 15, "text": "Look closely at the memory address in the text file. The flag is written right next to it!" }
+    ]
   },
   { 
     "id": "rev_4", 
@@ -347,7 +369,11 @@
     "evidence": "PUSH '}'; PUSH 'd'; PUSH 'e'; PUSH 's'; PUSH 'r'; PUSH 'e'; PUSH 'v'; PUSH 'e'; PUSH 'r'; PUSH '_'; PUSH 'e'; PUSH 'd'; PUSH 'o'; PUSH 'c'; PUSH 'p'; PUSH 'o'; PUSH '{'; PUSH 's'; PUSH 'c'; PUSH 't';",
     "requires": ["rev_3"], 
     "penalty": 15, 
-    "maxAttempts": 3 
+    "maxAttempts": 3,
+    "hints": [
+      { "cost": 25, "text": "The memory stack operates on a LIFO (Last In, First Out) basis." },
+      { "cost": 25, "text": "Get a piece of paper and literally write down the characters one by one starting from the very end of the sequence." }
+    ]
   },
   { 
     "id": "and_1", 
