@@ -9,9 +9,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Load challenges configuration
-const challenges = JSON.parse(fs.readFileSync('./challenges.json', 'utf-8'));
-
 // Initialize Supabase Postgres connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -19,6 +16,11 @@ const pool = new Pool({
 });
 
 let teamState = {};
+
+// THE FIX: Dynamically load challenges so it always reads the newest file from GitHub
+function getChallenges() {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'challenges.json'), 'utf-8'));
+}
 
 // Save state to Supabase
 function saveStateToDB() {
@@ -34,7 +36,6 @@ app.post('/api/register', (req, res) => {
     if (teamState[teamName] || Object.values(teamState).some(t => t.email === email)) {
         return res.status(400).json({ error: 'Team name or email already registered.' });
     }
-    // Removed global penaltyPoints, only tracking attempts per challenge now
     teamState[teamName] = { email, password, solved: [], attempts: {} };
     saveStateToDB();
     res.json({ message: 'Team successfully registered! You can now log in.' });
@@ -57,22 +58,22 @@ app.get('/api/challenges', (req, res) => {
     if (!teamName || !teamState[teamName]) return res.status(401).json({ error: "Invalid team" });
 
     const state = teamState[teamName];
+    const challenges = getChallenges(); // Fetch fresh JSON
     let cumulativeScore = 0;
 
-    // Calculate total score based only on earned points from solved challenges
     state.solved.forEach(id => {
         const chal = challenges.find(c => c.id === id);
         if (chal) {
             const fails = state.attempts[id] || 0;
             const penalty = chal.penalty || 0;
-            const earnedPoints = Math.max(0, chal.points - (fails * penalty));
-            cumulativeScore += earnedPoints;
+            cumulativeScore += Math.max(0, chal.points - (fails * penalty));
         }
     });
 
     const availableChallenges = challenges.map(chal => {
         const isSolved = state.solved.includes(chal.id);
         const isUnlocked = chal.requires.every(reqId => state.solved.includes(reqId));
+        // The Boss Level Check for Tier 4!
         const meetsScoreThreshold = chal.tier < 4 || cumulativeScore >= 1200;
 
         if (isUnlocked && meetsScoreThreshold) {
@@ -92,6 +93,7 @@ app.get('/api/challenges', (req, res) => {
 app.post('/api/submit-flag', (req, res) => {
     const { teamName, challengeId, submittedFlag } = req.body;
     const state = teamState[teamName];
+    const challenges = getChallenges(); // Fetch fresh JSON
     const challenge = challenges.find(c => c.id === challengeId);
 
     if (!state || !challenge) return res.status(404).json({ error: "Not found." });
@@ -106,7 +108,6 @@ app.post('/api/submit-flag', (req, res) => {
         state.solved.push(challengeId);
         saveStateToDB();
         
-        // Calculate the actual points awarded for solving it
         const penaltyAmount = challenge.penalty || 0;
         const earnedPoints = Math.max(0, challenge.points - (currentAttempts * penaltyAmount));
         
@@ -117,20 +118,17 @@ app.post('/api/submit-flag', (req, res) => {
         
         res.json({ success: true, message: msg });
     } else {
-        // Log the failure
         state.attempts[challengeId] = currentAttempts + 1;
         let errMsg = "Incorrect flag.";
-        
-        if (challenge.penalty) {
-            errMsg += ` Challenge value reduced by ${challenge.penalty} points.`;
-        }
+        if (challenge.penalty) errMsg += ` Challenge value reduced by ${challenge.penalty} points.`;
         
         saveStateToDB();
-        res.status(401).json({ error: errMsg }); // Total score does not drop, so no need to send newScore
+        res.status(401).json({ error: errMsg }); 
     }
 });
 
 app.get('/api/scoreboard', (req, res) => {
+    const challenges = getChallenges(); // Fetch fresh JSON
     const leaderboard = Object.entries(teamState).map(([teamName, state]) => {
         let score = 0;
         let history = [{ y: 0, challenge: "Started CTF" }];
@@ -165,11 +163,9 @@ pool.query(`CREATE TABLE IF NOT EXISTS global_state (id INT PRIMARY KEY, state J
             console.log("⚠️ No existing database found. Starting fresh.");
         }
         
-        // ONLY open the doors if the database connected perfectly
         app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
     })
     .catch(err => {
-        // THE FIX: Do NOT start the server with empty memory if the DB fails!
         console.error("❌ CRITICAL DB ERROR: Could not load Supabase data:", err);
         console.error("Shutting down to prevent data wipe. Render will auto-restart.");
         process.exit(1); 
