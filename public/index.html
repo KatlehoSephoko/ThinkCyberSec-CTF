@@ -138,7 +138,8 @@
         }
 
         async function loadChallenges() {
-            const res = await fetch(`/api/challenges?team=${encodeURIComponent(currentTeam)}`);
+            // THE FIX: Appended a timestamp cache-buster to the URL
+            const res = await fetch(`/api/challenges?team=${encodeURIComponent(currentTeam)}&_cb=${Date.now()}`);
             const data = await res.json();
             
             document.getElementById('displayScore').textContent = data.score;
